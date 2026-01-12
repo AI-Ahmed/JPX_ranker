@@ -114,29 +114,36 @@ Target = (Close[t+2] / Close[t+1]) - 1
 ```
 
 **Why This Is Dangerous**:
+
 - A sample at day $t$ "knows" what happens on days $t+1$ and $t+2$
 - The competition's evaluation framework uses this future information
 - Standard train/test splits would leak this into training data
 - Models trained this way are **overfitted to the future** and will fail in live trading
 
-**Our Solution**: 
+**Our Solution**:
+
 - **2-day Purge** before every test set in CPCV
 - Ensures no training sample can "see" the test period's target calculation window
 - Sacrifices ~0.4% of data for statistical integrity
 
 #### 2. **Feature Leakage from Rolling Windows**
+
 Features like `vol21` use a 21-day rolling window:
+
 ```python
 vol21 = stock['Close'].rolling(21).std()
 ```
 
 Without embargo:
+
 - Training set day $t+1$ uses data from $[t-20, t]$
 - If test set ends at day $t-1$, training features "see" test data
 - **Solution**: 21-day embargo after every test set
 
 #### 3. **Data Alignment Issues**
+
 Gradient Boosting Decision Tree (GBDT) models consume feature vectors. If our DataFrame order doesn't match the model's prediction order:
+
 ```python
 # WRONG: Predictions aligned to unsorted DataFrame
 val_fold['Score'] = model.predict(X_val)  # ❌ Misalignment!
@@ -156,17 +163,20 @@ val_fold = val_fold.sort_values(['Date', 'SecuritiesCode'])  # ✅
 The pipeline maintains strict boundaries between logical components:
 
 #### 1. **Search Logic (Optuna Sampler)**
+
 ```python
 sampler = optuna.samplers.TPESampler(seed=42)
 ```
 
 **Role**: Navigate the hyperparameter space
+
 - Uses Tree-structured Parzen Estimator (Bayesian optimization)
 - Analyzes trial history: "Trial 5 with `lr=0.1, depth=7` → Sharpe=0.85"
 - Suggests next coordinates in search space
 - **Never sees raw data rows**
 
 #### 2. **Validation Logic (CombinatorialPurgedCV)**
+
 ```python
 cv = CombinatorialPurgedCV(
     n_folds=10,
@@ -177,6 +187,7 @@ cv = CombinatorialPurgedCV(
 ```
 
 **Role**: Provide honest out-of-sample feedback
+
 - Generates multiple backtest paths (combinatorial)
 - Enforces temporal isolation (purge/embargo)
 - Returns aggregated metrics to Sampler
@@ -201,20 +212,24 @@ If you flip a coin 100 times, the best sequence might be 7 heads in a row. This 
 #### 1. **Deflated Sharpe Ratio (DSR)**
 
 The DSR adjusts for:
+
 - **Selection Bias**: Number of strategies tested ($K$)
 - **Non-normality**: Skewness ($\gamma_3$) and kurtosis ($\gamma_4$)
 - **Serial Correlation**: Autocorrelation ($\rho$)
 
 **Formula**:
+
 $$
 \text{DSR} = \text{PSR}\left(\widehat{SR}, SR_0 + E[\max_{k=1,...,K} SR_k \mid H_0], T, \gamma_3, \gamma_4, K\right)
 $$
 
 Where:
+
 - $E[\max SR]$ = Expected inflation from selecting best of $K$ trials (the "haircut")
 - $\text{PSR}$ = Probabilistic Sharpe Ratio
 
 **Implementation**:
+
 ```python
 # Expected maximum SR under null hypothesis
 E_max_SR = expected_maximum_sharpe_ratio(K, variance, SR0=0)
@@ -244,6 +259,7 @@ $$
 Where $\Phi$ is the standard normal CDF.
 
 **Interpretation**:
+
 - PSR = 0.95 → "95% confident the true SR exceeds the benchmark"
 - PSR = 0.50 → "Coin flip—could be luck or skill"
 - PSR < 0.50 → "More likely luck than skill"
@@ -260,6 +276,7 @@ $$
 $$
 
 **Example**:
+
 - Daily Sharpe = 0.10 (realistic)
 - MinTRL ≈ 300 days (1.2 years)
 
@@ -279,15 +296,18 @@ $$
 $$
 
 **Inputs**:
+
 - Observed Sharpe Ratio
 - Prior probability of skill ($p_{H_1}$)
 - Alternative hypothesis Sharpe ($SR_1$)
 
 **Output**:
+
 - oFDR = 0.05 → "5% chance this is a false positive"
 - oFDR = 0.30 → "30% chance this is noise"
 
 **Numerical Stability**:
+
 ```python
 # Problem: Perfect Sharpes can cause division by zero
 p0 = 1 - probabilistic_sharpe_ratio(SR, SR0, ...)
@@ -307,6 +327,7 @@ if denominator < 1e-16:
 **Critical Implementation Detail**: Selection bias is cumulative across **all** tested strategies.
 
 **Wrong Approach**:
+
 ```python
 # In fit():
 for model_name in ['LightGBM', 'XGBoost', 'CatBoost']:
@@ -315,6 +336,7 @@ for model_name in ['LightGBM', 'XGBoost', 'CatBoost']:
 ```
 
 **Correct Approach**:
+
 ```python
 # In fit():
 trial_sharpes = []  # ✅ Global across all models
@@ -329,14 +351,17 @@ for model_name in ['LightGBM', 'XGBoost', 'CatBoost']:
 ### Success-Based Early Stopping (MinTRL Callback)
 
 **Traditional Pruning** (e.g., `MedianPruner`):
+
 - Stops trials that perform **worse** than median
 - Goal: Save computation on "bad" models
 
 **MinTRL Callback** (Our Approach):
+
 - Stops the **entire study** when we find a **statistically significant** model
 - Goal: Prevent over-searching once we have "statistically significant" evidence
 
 **Logic**:
+
 ```python
 def __call__(self, study, trial):
     # K is cumulative across ALL models to guard against selection bias
@@ -356,11 +381,14 @@ def __call__(self, study, trial):
 ```
 
 #### Architecture-Aware Exploration
+
 This implementation addresses a critical trade-off in financial ML: **The Starvation Problem**.
+
 - **The Issue**: If the first model (e.g., LightGBM) reaches global significance early, a naive callback would shut down XGBoost and CatBoost before they run a single trial.
 - **Our Solution**: We enforce a `min_per_model` constraint. Every architecture is guaranteed a fair tuning window, while still contributing to the global `K` count to maintain statistical honesty in the Deflated Sharpe Ratio (DSR) calculation.
 
 **Example Timeline**:
+
 - **LightGBM**: Runs 20 trials → Global K=20.
 - **XGBoost**: Significance threshold is met, but `min_per_model=5` forces 5 trials → Global K=25.
 - **CatBoost**: Significance threshold already met, but forces 5 trials → Global K=30.
@@ -375,6 +403,7 @@ This implementation addresses a critical trade-off in financial ML: **The Starva
 #### Purging (2-Day Window)
 
 **Problem**: The target is calculated from future data:
+
 ```python
 # In data preparation
 df['Target'] = (df.groupby('SecuritiesCode')['Close']
@@ -382,10 +411,12 @@ df['Target'] = (df.groupby('SecuritiesCode')['Close']
 ```
 
 **Implication**:
+
 - Sample at day $t$ uses `Close[t+1]` and `Close[t+2]`
 - If test set contains day $t$, training set cannot use $t-1$ or $t-2$
 
 **Solution**:
+
 ```python
 purged_size = 2
 ```
@@ -393,15 +424,18 @@ purged_size = 2
 #### Embargoing (21-Day Window)
 
 **Problem**: Features use rolling windows:
+
 ```python
 df['vol21'] = df.groupby('SecuritiesCode')['Close'].rolling(21).std()
 ```
 
 **Implication**:
+
 - Training sample at day $t$ uses data from $[t-20, ..., t]$
 - If test set ends at day $t-1$, training day $t$ "sees" test data
 
 **Solution**:
+
 ```python
 embargo_size = 21
 ```
@@ -409,16 +443,19 @@ embargo_size = 21
 #### Deterministic Sorting
 
 **Problem**: GBDT models return vectors:
+
 ```python
 predictions = model.predict(X_val)  # Returns numpy array
 ```
 
 If `X_val` is unsorted but `val_fold` is sorted differently:
+
 ```python
 val_fold['Score'] = predictions  # ❌ Misalignment!
 ```
 
 **Solution**: Enforce consistent sorting:
+
 ```python
 # In _evaluate_fold():
 train_fold = train_fold.sort_values(['Date', 'SecuritiesCode']).reset_index(drop=True)
@@ -433,6 +470,7 @@ df = df.sort_values([self.group_col, 'SecuritiesCode'])
 ### Feature Exclusion
 
 **Critical**: Exclude the `Target` column from features:
+
 ```python
 class DataProcessor:
     def __init__(self, exclude_features=None):
@@ -444,6 +482,7 @@ class DataProcessor:
 ### Leakage Detection
 
 **Added Runtime Check**:
+
 ```python
 # In _evaluate_fold():
 if 'Target' not in self.data_processor_.exclude_features:
@@ -461,6 +500,7 @@ if 'Target' not in self.data_processor_.exclude_features:
 We optimize on two objectives:
 
 #### Objective 1: NDCG@100 (Ranking Accuracy)
+
 ```python
 directions = ['maximize', ...]  # Higher is better
 ```
@@ -470,11 +510,13 @@ directions = ['maximize', ...]  # Higher is better
 **Why**: Direct competition metric
 
 #### Objective 2: Sharpe Difference (Return Prediction)
+
 ```python
 directions = [..., 'minimize']  # Lower is better
 ```
 
 **Formula**:
+
 ```python
 actual_sharpe = calc_spread_return_sharpe(actual_rankings)
 predicted_sharpe = calc_spread_return_sharpe(predicted_rankings)
@@ -488,6 +530,7 @@ sharpe_diff = predicted_sharpe - actual_sharpe  # Can be negative!
 ### Trial Selection
 
 **After Optuna Completes**:
+
 ```python
 best_trials = study.best_trials
 
@@ -512,11 +555,13 @@ if best_trial is None:
 ### Cross-Validation Strategy
 
 **Why Not Standard TimeSeriesSplit?**
+
 - Only provides 1 backtest path
 - No purging/embargoing
 - Prone to overfitting on specific regime
 
 **Our Solution: CombinatorialPurgedCV**
+
 ```python
 cv = CombinatorialPurgedCV(
     n_folds=10,           # Divide time into 10 segments
@@ -539,20 +584,24 @@ cv = CombinatorialPurgedCV(
 **Answer**: **No**. Here's why:
 
 **Trials ($K$)**: 
+
 - We **select the maximum** across trials
 - This creates the "winner's curse"
 - Must be corrected via DSR
 
 **Folds ($N$)**:
+
 - We **average** across folds
 - This reduces measurement variance
 - No selection, no bias
 
 **Analogy**:
+
 - Testing 100 strategies and picking the best → $K = 100$ (selection bias)
 - Measuring 1 strategy across 10 time periods and averaging → $N = 10$ (variance reduction)
 
 **Implementation**:
+
 ```python
 # In _compute_cv_score():
 ndcg_scores = []
@@ -687,6 +736,7 @@ jpx_ranker/
 ### Key Files
 
 #### `model_selection.py`
+
 - `MinTRLCallback`: Success-based early stopping
 - `ModelSelector`: Multi-model optimization with CPCV
 - `_compute_cv_score()`: Fold aggregation
@@ -694,18 +744,21 @@ jpx_ranker/
 - `_compute_adjusted_statistics()`: DSR/PSR/oFDR reporting
 
 #### `statistical_validation.py`
+
 - `probabilistic_sharpe_ratio()`: PSR calculation
 - `minimum_track_record_length()`: MinTRL formula
 - `expected_maximum_sharpe_ratio()`: Selection bias haircut
 - `oFDR()`: Bayesian false discovery rate
 
 #### `data_prep.py`
+
 - `DataProcessor`: Unified interface for LGBM/XGB/CatBoost
 - `prepare_lgb_dataset()`: LightGBM Dataset creation
 - `prepare_xgb_data()`: XGBoost DMatrix preparation
 - `prepare_catboost_pool()`: CatBoost Pool creation
 
 #### `utils.py`
+
 - `calc_spread_return_sharpe()`: Daily Sharpe from rankings
 - `calc_spread_return_sharpe_scorer()`: Sharpe difference metric
 - `_calc_spread_return_per_day()`: Single-day spread return
@@ -806,6 +859,7 @@ else:
 ### Issue: Impossibly High Sharpe Ratios
 
 **Symptom**:
+
 ```
 Daily Sharpe: 0.98
 MinTRL: 3 days
@@ -814,24 +868,29 @@ MinTRL: 3 days
 **Diagnosis**: Data leakage
 
 **Checklist**:
+
 1. **Target in features?**
+
    ```python
    assert 'Target' in processor.exclude_features
    ```
 
 2. **Insufficient purging?**
+
    ```python
    # For JPX: Target uses t+1, t+2
    assert purged_size >= 2
    ```
 
 3. **Insufficient embargoing?**
+
    ```python
    # For JPX: Features use 21-day windows
    assert embargo_size >= 21
    ```
 
 4. **Data alignment?**
+
    ```python
    # Check sorting
    assert train_fold.index.is_monotonic_increasing
@@ -841,6 +900,7 @@ MinTRL: 3 days
 ### Issue: NaN in oFDR
 
 **Symptom**:
+
 ```
 Observed FDR: nan
 ```
@@ -848,6 +908,7 @@ Observed FDR: nan
 **Cause**: Division by zero when Sharpe is extremely high
 
 **Solution**: Already implemented in `statistical_validation.py`:
+
 ```python
 # Clamp probabilities
 p0 = max(p0, 1e-16)
@@ -872,6 +933,7 @@ Trial 100: MinTRL: Collecting trials (100/5)  # Still collecting!
 **Cause**: `min_trials` threshold too high or T calculation incorrect
 
 **Debug**:
+
 ```python
 # In MinTRLCallback.__call__():
 print(f"K={K}, T={T}, best_SR={best_SR:.4f}")
@@ -880,6 +942,7 @@ print(f"PSR: {psr:.3f}")
 ```
 
 **Solution**:
+
 - Lower `min_trials` (e.g., 3-5)
 - Check `self.selector.validation_T_` is being set correctly
 
@@ -888,6 +951,7 @@ print(f"PSR: {psr:.3f}")
 **Symptom**: DSR haircut seems too small
 
 **Check**:
+
 ```python
 # In fit():
 print(f"Total trials before LightGBM: {len(self.trial_sharpes_)}")
@@ -951,6 +1015,7 @@ This project is for educational and research purposes. Please ensure compliance 
 This implementation follows the rigorous statistical framework outlined in Marcos López de Prado's *Advances in Financial Machine Learning*, adapting institutional best practices to the Kaggle JPX competition.
 
 Special attention was paid to:
+
 - Temporal data integrity (purging/embargoing)
 - Selection bias correction (cumulative K tracking)
 - Success-based optimization (MinTRL early stopping)
