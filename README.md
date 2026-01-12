@@ -220,7 +220,7 @@ The DSR adjusts for:
 **Formula**:
 
 $$
-\text{DSR} = \text{PSR}\left(\widehat{SR}, SR_0 + E[\max_{k=1,...,K} SR_k \mid H_0], T, \gamma_3, \gamma_4, K\right)
+\text{DSR} = \text{PSR}\left(\hat{SR}, SR_0 + E\left[\max_{k=1,\ldots,K} SR_k \mid H_0\right], T, \gamma_3, \gamma_4, K\right)
 $$
 
 Where:
@@ -253,7 +253,7 @@ dsr = probabilistic_sharpe_ratio(
 Converts Sharpe Ratio to a probability:
 
 $$
-\text{PSR} = \Phi\left(\frac{\widehat{SR} - SR_0}{\sqrt{\text{Var}[\widehat{SR}]}}\right)
+\text{PSR} = \Phi\left(\frac{\hat{SR} - SR_0}{\sqrt{\text{Var}[\hat{SR}]}}\right)
 $$
 
 Where $\Phi$ is the standard normal CDF.
@@ -271,8 +271,9 @@ Where $\Phi$ is the standard normal CDF.
 **Question**: "How many days do I need to validate this Sharpe Ratio?"
 
 **Formula**:
+
 $$
-\text{MinTRL} = \left(\frac{Z_\alpha \cdot \sqrt{\text{Var}[\widehat{SR}]}}{\widehat{SR} - SR_0}\right)^2
+\text{MinTRL} = \left(\frac{Z_\alpha \cdot \sqrt{\text{Var}[\hat{SR}]}}{\hat{SR} - SR_0}\right)^2
 $$
 
 **Example**:
