@@ -496,10 +496,17 @@ class ModelSelector(BaseEstimator):
             X_val_for_pred = val_pool
             
             ndcg_metric = f'NDCG:top={self.eval_at[-1]}'
+            # CatBoost GPU implementation of YetiRank has a hard limit of 1023 items per query (group).
+            # The JPX dataset typically has ~2000 items per date, which exceeds this limit.
+            # We must use CPU for YetiRank to avoid crashing ("Error: max query size supported on GPU is 1023").
+            cb_task_type = 'CPU'
+            if self.device.upper() == 'GPU':
+                logger.warning("CatBoost on GPU supports max group size 1023. Switching to CPU for YetiRank training to handle larger groups.")
+
             model = cb.CatBoostRanker(
                 loss_function='YetiRank',
                 eval_metric=ndcg_metric,
-                task_type=self.device.upper(),
+                task_type=cb_task_type,
                 random_seed=self.seed,
                 verbose=False,
                 **params
