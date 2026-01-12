@@ -47,13 +47,6 @@ dependencies = [
     # Logging
     "loguru>=0.7.3",
     
-    # Compatibility constraints for Kaggle environment
-    # Critical: These packages have strict version requirements in Kaggle
-    "protobuf>=3.20.0,<4.0.0",
-    "dill>=0.3.1.1,<0.3.2",
-    "urllib3>=1.25.4,<2.1",
-    "scipy>=1.4.1,<1.12",
-    "packaging>=14.3,<22.0",
 ]
 
 [project.optional-dependencies]
