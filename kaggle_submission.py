@@ -19,14 +19,12 @@ Usage in Jupyter Notebook:
     )
 """
 
-import os
 import pickle
 from pathlib import Path
-from typing import Optional
 
 from loguru import logger
 
-from ._src.infer import InferencePipeline
+from jpx_ranker import InferencePipeline
 
 
 def run_kaggle_submission(
