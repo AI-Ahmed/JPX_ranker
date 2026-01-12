@@ -2,7 +2,7 @@
 name = "jpx-ranker"
 version = "0.1.0"
 description = "JPX Tokyo Stock Exchange Prediction - Ranking Model"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 dependencies = [
     # Data manipulation and analysis
     "pandas>=1.5.3",
