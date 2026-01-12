@@ -220,7 +220,7 @@ The DSR adjusts for:
 **Formula**:
 
 $$
-\text{DSR} = \text{PSR}\left(\hat{SR}, SR_0 + E\left[\max_{k=1,\ldots,K} SR_k \,|\, H_0\right], T, \gamma_3, \gamma_4, K\right)
+\text{DSR} = \text{PSR}\left(\hat{SR}, SR_0 + E\left[\max_{k=1,\ldots,K} SR_k \mid H_0\right], T, \gamma_3, \gamma_4, K\right)
 $$
 
 Note: The expression $E\left[\max_{k=1,\ldots,K} SR_k \mid H_0\right]$ represents the expected maximum Sharpe ratio under the null hypothesis (the "haircut" adjustment).
