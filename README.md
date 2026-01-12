@@ -220,8 +220,10 @@ The DSR adjusts for:
 **Formula**:
 
 $$
-\text{DSR} = \text{PSR}\left(\hat{SR}, SR_0 + E\left[\max_{k=1,\ldots,K} SR_k \mid H_0\right], T, \gamma_3, \gamma_4, K\right)
+\text{DSR} = \text{PSR}\left(\hat{SR}, SR_0 + E\left[\max_{k=1,\ldots,K} SR_k \,|\, H_0\right], T, \gamma_3, \gamma_4, K\right)
 $$
+
+Note: The expression $E\left[\max_{k=1,\ldots,K} SR_k \mid H_0\right]$ represents the expected maximum Sharpe ratio under the null hypothesis (the "haircut" adjustment).
 
 Where:
 
@@ -721,17 +723,25 @@ print(f"MinTRL: {min_trl:.0f} days") # e.g., 287 days
 ## Project Structure
 
 ```
-jpx_ranker/
-├── _src/
-│   ├── __init__.py
-│   ├── data_prep.py              # Framework-specific data processors
-│   ├── model_selection.py        # CPCV, Optuna, MinTRL Callback
-│   ├── statistical_validation.py # DSR, PSR, MinTRL, oFDR
-│   ├── train.py                  # TrainingPipeline orchestration
-│   └── utils.py                  # Sharpe calculation, spread returns
-├── JPX_v1.ipynb                  # Main training notebook
-├── README.md                     # This file
-└── requirements.txt              # Dependencies
+JPX_ranker/
+├── jpx_ranker/                   # Main package
+│   ├── __init__.py              # Package exports (DataProcessor, TrainingPipeline, etc.)
+│   └── _src/                    # Core source modules
+│       ├── __init__.py
+│       ├── data_prep.py         # DataProcessor for framework-specific preprocessing
+│       ├── infer.py             # InferencePipeline for predictions and Kaggle submission
+│       ├── model_selection.py   # ModelSelector with CPCV, Optuna, MinTRL Callback
+│       ├── statistical_validation.py # DSR, PSR, MinTRL, oFDR validation
+│       ├── train.py             # TrainingPipeline orchestration
+│       └── utils.py             # Sharpe calculation, spread returns, feature engineering
+├── notebooks/
+│   └── JPX_v1.ipynb             # Main training and inference notebook
+├── kaggle_setup.py              # Kaggle authentication and data download utilities
+├── kaggle_submission.py         # Kaggle submission workflow
+├── pyproject.toml              # Project configuration and dependencies
+├── README.md                    # This file
+├── LICENSE                      # License file
+└── .gitignore                   # Git ignore rules
 ```
 
 ### Key Files
@@ -976,8 +986,8 @@ print(f"Total trials after XGBoost: {len(self.trial_sharpes_)}")
 ### Academic Papers
 
 1. **López de Prado, M.** (2018). *Advances in Financial Machine Learning*. Wiley.
-   - Chapter 12: Cross-Validation in Finance
    - Chapter 11: The Dangers of Backtesting
+   - Chapter 12: Cross-Validation in Finance
    - Chapter 14: Backtest Overfitting
 
 2. **Bailey, D. H., & López de Prado, M.** (2012). *The Sharpe Ratio Efficient Frontier*. Journal of Risk, 15(2), 3-44.
