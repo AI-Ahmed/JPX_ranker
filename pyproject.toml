@@ -5,44 +5,67 @@ description = "JPX Tokyo Stock Exchange Prediction - Ranking Model"
 requires-python = ">=3.10"
 dependencies = [
     # Data manipulation and analysis
-    "pandas>=1.5.3",
+    # Constrained to work with CUDA/cuDF packages in Kaggle
+    "pandas>=1.3,<1.6.0",
     "numpy>=1.24.4,<1.25",
+    
     # Environment variables
     "python-dotenv>=1.0.0",
+    
     # Kaggle integration
     "kaggle>=1.6.0",
     "kagglehub>=0.3.0",
+    
     # Parallel processing
     "pandarallel>=1.6.5",
+    
     # Progress bars
     "tqdm>=4.65.0",
+    
     # Statistical analysis
     "statsmodels>=0.14.0",
+    
     # Machine learning
     "scikit-learn>=1.3.0",
     "lightgbm>=4.0.0",
     "xgboost>=2.0.0",
     "catboost>=1.2.0",
     "optuna>=3.3.0",
+    
     # Visualization
-    "matplotlib>=3.7.0",
-    "seaborn>=0.12.0",
+    # Constrained to work with ydata-profiling
+    "matplotlib>=3.7.0,<3.9",
+    "seaborn>=0.12.0,<0.13",
+    
     # Data serialization
-    "pyarrow>=14.0.0",
+    # Constrained to work with apache-beam and cuDF
+    "pyarrow>=11.0.0,<12.0.0",
+    
+    # Portfolio optimization
     "skfolio>=0.15.3",
+    
+    # Logging
     "loguru>=0.7.3",
+    
     # Compatibility constraints for Kaggle environment
-    # Note: These constraints help avoid conflicts with Kaggle's pre-installed packages
-    "protobuf>=3.20.0,<5.0.0",
+    # Critical: These packages have strict version requirements in Kaggle
+    "protobuf>=3.20.0,<4.0.0",
+    "dill>=0.3.1.1,<0.3.2",
+    "urllib3>=1.25.4,<2.1",
+    "scipy>=1.4.1,<1.12",
+    "packaging>=14.3,<22.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     # Jupyter notebook support
+    # Note: In Kaggle notebooks, these are pre-installed
+    # Only install locally for development
     "ipykernel>=6.25.0",
     "ipython>=8.14.0",
     "jupyter>=1.0.0",
-    "jupyterlab>=4.0.0",
+    "jupyterlab>=3.6.0,<4.0.0",  # Constrained for beatrix-jupyterlab compatibility
+    "jupyter-lsp>=1.5.1,<2.0.0",  # Constrained for jupyterlab compatibility
 ]
 
 [build-system]
@@ -55,6 +78,6 @@ packages = []
 [tool.uv]
 dev-dependencies = [
     "jupyter>=1.0.0",
-    "jupyterlab>=4.0.0",
+    "jupyterlab>=3.6.0,<4.0.0",
+    "jupyter-lsp>=1.5.1,<2.0.0",
 ]
-
