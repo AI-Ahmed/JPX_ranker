@@ -444,7 +444,7 @@ class ModelSelector(BaseEstimator):
             model = lgb.LGBMRanker(
                 objective='lambdarank',
                 metric=self.eval_metric,
-                device=self.device.lower(),
+                device='cpu', # GPU is not supported for large bin sizes
                 n_jobs=-1,
                 random_state=self.seed,
                 verbose=-1,
@@ -1055,7 +1055,7 @@ class ModelSelector(BaseEstimator):
             self.best_model_ = lgb.LGBMRanker(
                 objective='lambdarank',
                 metric=self.eval_metric,
-                device=self.device.lower(),
+                device='cpu', # GPU is not supported for large bin sizes
                 n_jobs=-1,
                 random_state=self.seed,
                 verbose=-1,
