@@ -5,9 +5,10 @@ description = "JPX Tokyo Stock Exchange Prediction - Ranking Model"
 requires-python = ">=3.10"
 dependencies = [
     # Data manipulation and analysis
-    # Constrained to work with CUDA/cuDF packages in Kaggle
+    # Note: Versions are flexible to work with Kaggle's pre-installed packages
+    # Kaggle has: pandas 2.1.4, numpy 1.26.4, scipy 1.11.4 (transitive)
     "pandas>=2.1.0",
-    "numpy>=1.26.0",
+    "numpy>=1.24.0",  # Flexible: Kaggle has 1.26.4, compatible with our code
     
     # Environment variables
     "python-dotenv>=1.0.0",
@@ -23,30 +24,29 @@ dependencies = [
     "tqdm>=4.65.0",
     
     # Statistical analysis
+    # Note: statsmodels will use Kaggle's scipy 1.11.4 (transitive dependency)
     "statsmodels>=0.14.0",
     
     # Machine learning
-    "scikit-learn>=1.2.2",
+    "scikit-learn>=1.2.2",  # Kaggle has 1.2.2
     "lightgbm>=4.0.0",
     "xgboost>=2.0.0",
     "catboost>=1.2.0",
     "optuna>=3.3.0",
     
     # Visualization
-    # Constrained to work with ydata-profiling
-    "matplotlib>=3.7.0,<3.9",
-    "seaborn>=0.12.0,<0.13",
+    # Note: Constrained to avoid conflicts with ydata-profiling (Kaggle pre-installed)
+    "matplotlib>=3.7.0,<3.9",  # Kaggle has 3.7.5
+    "seaborn>=0.12.0,<0.13",   # Kaggle has 0.12.2
     
     # Data serialization
-    # Constrained to work with apache-beam and cuDF
-    "pyarrow>=15.0.0",
+    "pyarrow>=15.0.0",  # Kaggle has 15.0.2
     
     # Portfolio optimization
     "skfolio>=0.15.3",
     
     # Logging
-    "loguru>=0.7.3",
-    
+    "loguru>=0.7.3",  # Kaggle has 0.7.2, we need >=0.7.3 (will upgrade)
 ]
 
 [project.optional-dependencies]
