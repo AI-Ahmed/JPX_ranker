@@ -5,10 +5,9 @@ description = "JPX Tokyo Stock Exchange Prediction - Ranking Model"
 requires-python = ">=3.10"
 dependencies = [
     # Data manipulation and analysis
-    # Note: Versions are flexible to work with Kaggle's pre-installed packages
-    # Kaggle has: pandas 2.1.4, numpy 1.26.4, scipy 1.11.4 (transitive)
+    # Constrained to work with Kaggle's Python 3.10 and pre-installed ML stack
     "pandas>=2.1.0",
-    "numpy>=1.24.0",  # Flexible: Kaggle has 1.26.4, compatible with our code
+    "numpy>=1.24.0,<2.0.0",
     
     # Environment variables
     "python-dotenv>=1.0.0",
@@ -18,35 +17,42 @@ dependencies = [
     "kagglehub>=0.3.0",
     
     # Parallel processing
-    "pandarallel>=1.6.5",
+    "pandarallel",
+    "feather-format",
     
     # Progress bars
-    "tqdm>=4.65.0",
+    "tqdm",
     
     # Statistical analysis
-    # Note: statsmodels will use Kaggle's scipy 1.11.4 (transitive dependency)
     "statsmodels>=0.14.0",
     
     # Machine learning
-    "scikit-learn>=1.2.2",  # Kaggle has 1.2.2
-    "lightgbm>=4.0.0",
-    "xgboost>=2.0.0",
-    "catboost>=1.2.0",
-    "optuna>=3.3.0",
+    "scikit-learn>=1.5.0",
+    "lightgbm",
+    "xgboost",
+    "catboost",
+    "optuna",
     
     # Visualization
-    # Note: Constrained to avoid conflicts with ydata-profiling (Kaggle pre-installed)
-    "matplotlib>=3.7.0,<3.9",  # Kaggle has 3.7.5
-    "seaborn>=0.12.0,<0.13",   # Kaggle has 0.12.2
+    # Constrained to work with ydata-profiling
+    "matplotlib>=3.7.0,<3.9",
+    "seaborn>=0.12.0,<0.13",
     
     # Data serialization
-    "pyarrow>=15.0.0",  # Kaggle has 15.0.2
+    "pyarrow>=14.0.0",
     
     # Portfolio optimization
     "skfolio>=0.15.3",
     
     # Logging
-    "loguru>=0.7.3",  # Kaggle has 0.7.2, we need >=0.7.3 (will upgrade)
+    "loguru",
+    
+    # Compatibility constraints for Kaggle environment
+    "protobuf>=3.20.0,<5.0.0",
+    "dill>=0.3.1.1,<0.4.0",
+    "urllib3>=1.25.4,<2.1",
+    "scipy>=1.11.0,<1.14.0",
+    "packaging>=21.3",
 ]
 
 [project.optional-dependencies]

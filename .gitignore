@@ -77,6 +77,12 @@ kaggle/working/
 # Kaggle API credentials
 kaggle.json
 
+# Docker wrapper - ignore copied competition module and build artifacts
+docker_wrapper/
+docker_wrapper/jpx_tokyo_market_prediction/
+docker_wrapper/*.so
+docker_wrapper/__pycache__/
+
 # ============================================================================
 # JUPYTER NOTEBOOKS & OUTPUTS
 # ============================================================================
@@ -270,6 +276,16 @@ secrets/
 *_old.ipynb
 
 # ============================================================================
+# DOCKER FILES
+# ============================================================================
+# Docker build artifacts
+*.dockerignore
+docker-compose.override.yml
+
+# Docker images (keep Dockerfile and source scripts)
+docker_wrapper/*.tar
+
+# ============================================================================
 # EXCEPTIONS - KEEP THESE FILES
 # ============================================================================
 # Keep project configuration
@@ -284,6 +300,13 @@ secrets/
 !jpx_ranker/__init__.py
 !jpx_ranker/kaggle_setup.py
 !jpx_ranker/kaggle_submission.py
+
+# Keep docker wrapper source files (but not copied competition module)
+!docker_wrapper/Dockerfile
+!docker_wrapper/submission_wrapper.py
+!docker_wrapper/kaggle_docker_submission.py
+!docker_wrapper/README.md
+!docker_wrapper/__init__.py
 
 # Keep main notebooks (but not backups)
 !jpx_ranker/JPX_v1.ipynb
