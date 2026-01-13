@@ -300,6 +300,7 @@ docker_wrapper/*.tar
 !jpx_ranker/__init__.py
 !jpx_ranker/kaggle_setup.py
 !jpx_ranker/kaggle_submission.py
+submission.py
 
 # Keep docker wrapper source files (but not copied competition module)
 !docker_wrapper/Dockerfile
