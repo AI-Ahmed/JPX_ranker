@@ -1066,7 +1066,7 @@ If you use this package or notebook in your research, please cite it as follows:
 
 ```bibtex
 @software{JPX_ranker_2026,
-  author = {Ahmed, AI},
+  author = {Nabil Atwa, Ahmed},
   title = {JPX_ranker: Institutional-Grade Machine Learning Pipeline for Tokyo Stock Exchange Prediction},
   url = {https://github.com/AI-Ahmed/JPX_ranker},
   version = {0.1.0},
