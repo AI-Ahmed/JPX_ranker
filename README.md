@@ -156,6 +156,26 @@ val_fold = val_fold.sort_values(['Date', 'SecuritiesCode'])  # ✅
 
 ---
 
+## Strategic Filtering Framework: Triple-Barrier Labeling (TBL)
+
+Before securities are ranked, we implement a **Strategic Filtering Layer** based on Marcos López de Prado’s **Triple-Barrier Labeling** (TBL) method. This ensures that the ranking engine only considers securities with tradable volatility and realistic strategic potential, rather than ranking noisy or illiquid signals.
+
+### 1. The Filtering Objective
+Standard machine learning models often predict "fixed-horizon" returns (e.g., return at $t+2$). However, professional trading requires evaluating a security based on its **path characteristics**:
+- **Profit Take (Upper Barrier)**: Does the security hit our price target?
+- **Stop Loss (Lower Barrier)**: Did the security violate our risk threshold?
+- **Time-Out (Vertical Barrier)**: Did the holding period expire without hitting either price barrier?
+
+### 2. Identifying "Tradable" Events
+We use a **CUSUM Filter** to identify points of significant informational content (events). For each event, we apply the Triple-Barrier:
+- **Volatility-Adjusted Barriers**: The width of the horizontal barriers is dynamically scaled by the security's exponential moving standard deviation of returns.
+- **Strategic Selection**: Only securities that exhibit "barrier-touching" behavior within the target horizon are passed to the Ranker. This distinguishes securities with high-conviction signals from those exhibiting sideways noise.
+
+### 3. Implementation in `jpx_ranker`
+The pipeline integrates this via `compute_tbl_events` and `get_tbl_events`. This meta-labeling layer acts as a "gatekeeper," ensuring the `ModelSelector` trains on high-quality, strategically viable samples, leading to more robust out-of-sample Sharpe Ratios.
+
+---
+
 ## Architecture Philosophy
 
 ### Separation of Concerns
@@ -1037,3 +1057,19 @@ The pipeline is designed to be **production-ready**, not just competition-winnin
 ---
 
 **Built with rigor. Validated with science. Ready for production.**
+
+---
+
+## Citation
+
+If you use this package or notebook in your research, please cite it as follows:
+
+```bibtex
+@software{JPX_ranker_2026,
+  author = {Ahmed, AI},
+  title = {JPX_ranker: Institutional-Grade Machine Learning Pipeline for Tokyo Stock Exchange Prediction},
+  url = {https://github.com/AI-Ahmed/JPX_ranker},
+  version = {0.1.0},
+  year = {2026}
+}
+```
